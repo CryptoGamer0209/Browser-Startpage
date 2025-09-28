@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    /* --- Grundlayout --- */
+    body {
+        margin: 0;
+        background: #12414d;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* Dashboard Grid */
+    .dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 30px;
+        max-width: 900px;
+        width: 90%;
+        justify-items: center;
+    }
+
+    /* Icons & Ordner-Button */
+    .icon {
+        font-family: 'Roboto', sans-serif;
+        width: 90px;
+        text-align: center;
+        cursor: pointer;
+        /* Hintergrund-Kachel */
+        background: #bafff7;
+        border-radius: 20px;
+        padding: 16px 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.25s ease;
+    }
+    .icon img {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 8px;
+        transition: transform 0.25s ease;
+    }
+    .icon span {
+        display: block;
+        font-size: 14px;
+        color: #333;
+    }
+
+    /* Hover-Effekte */
+    .icon:hover {
+        background: #e0e7ff;    /* sanftes Blau */
+        box-shadow: 0 6px 14px rgba(0,0,0,0.2); /* tieferer Schatten */
+    }
+
+    .icon:hover img {
+        transform: scale(1.1); /* leichtes Vergrößern */
+    }
+
+    /* --- Overlay + Fenster bleiben gleich --- */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+    }
+
+    .overlay.active {
+        display: flex;
+        animation: fadeIn 0.3s forwards;
+    }
+
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to   {opacity: 1;}
+    }
+
+    /* --- Ordner-Fenster --- */
+    .folder-window {
+        background: #454545;
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 600px;
+        width: 80%;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        transform: scale(0.8);
+        opacity: 0;
+        animation: popup 0.3s forwards;
+    }
+    @keyframes popup {
+        to {transform: scale(1); opacity: 1;}
+    }
+    .folder-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 25px;
+        justify-items: center;
+    }
+    .close-hint {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 13px;
+        color: #fff;
+    }
+
+    /* Nunito für alles */
+    body, .icon, .icon span, a {
+        font-family: 'Nunito', sans-serif;
+    }
+
+    /* Links ohne Unterstreichung und Standardfarbe */
+    a {
+        text-decoration: none;   /* entfernt die Striche */
+        color: inherit;          /* übernimmt die Textfarbe des Eltern-Elements */
+    }
+
+    .icon span {
+        font-weight: 700;   /* 700 entspricht „bold“ */
+    }
+
+</style>
+</head>
+<body>
+
+<!-- Haupt-Dashboard -->
+<div class="dashboard">
+    <div class="icon folder" onclick="openFolder('services')">
+        <img src="https://cdn-icons-png.flaticon.com/512/716/716784.png" alt="Ordner">
+        <span>Schuldienste</span>
+    </div>
+
+    <div class="icon folder" onclick="openFolder('tools')">
+        <img src="https://cdn-icons-png.flaticon.com/512/716/716784.png" alt="Ordner">
+        <span>Tools</span>
+    </div>
+
+    <div class="icon folder" onclick="openFolder('books')">
+        <img src="https://cdn-icons-png.flaticon.com/512/716/716784.png" alt="Ordner">
+        <span>Bücher</span>
+    </div>
+
+    <div class="icon folder" onclick="openFolder('search')">
+        <img src="https://cdn-icons-png.flaticon.com/512/716/716784.png" alt="Ordner">
+        <span>Recherche</span>
+    </div>
+
+    <a class="icon" href="https://pairdrop.net" target="_blank">
+        <img src="https://www.google.com/s2/favicons?sz=64&domain=pairdrop.net" alt="PairDrop">
+        <span>PairDrop</span>
+    </a>
+
+    <a class="icon" href="https://vault.bitwarden.eu/" target="_blank">
+        <img src="https://www.google.com/s2/favicons?sz=64&domain=vault.bitwarden.eu" alt="Bitwarden">
+        <span>Bitwarden</span>
+    </a>
+
+    <a class="icon" href="https://app.todoist.com/app" target="_blank">
+        <img src="https://www.google.com/s2/favicons?sz=64&domain=app.todoist.com" alt="Todoist">
+        <span>Todoist</span>
+    </a>
+
+<!-- Overlay mit Ordner -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+    <div class="folder-window" id="folder-content">
+        <!-- Inhalt wird per JS gefüllt -->
+    </div>
+</div>
+
+<script>
+const overlay = document.getElementById('overlay');
+const folderContent = document.getElementById('folder-content');
+
+// Ordner-Inhalte als Objekte
+const folders = {
+    services: [
+        { name: "Schulseite", url: "https://bs-oldesloe.de"},
+        { name: "WebUntis", url: "https://hepta.webuntis.com/today"},
+        { name: "Moodle", url: "https://bsodmoodle.de"},
+        { name: "NextCloud", url: "https://bsodcloud.de"},
+        { name: "Microsoft 365", url: "https://m365.cloud.microsoft/apps/"}
+    ],
+    tools: [
+        { name: "GeoGebra", url: "https://www.geogebra.org/calculator"},
+        { name: "Rechentabelle", url: "https://www.wolframalpha.com/"},
+        { name: "Rechner", url: "https://de.symbolab.com/calculators"},
+        { name: "MindMeister", url: "https://www.mindmeister.com/app/"}
+    ],
+    books: [
+        { name: "Duden", url: "https://www.duden.de/"},
+        { name: "Cornelsen", url: "https://mein.cornelsen.de/bibliothek"},
+        { name: "Deutsch-Englisch", url: "https://de.pons.com/%C3%BCbersetzung/deutsch-englisch"},
+        { name: "Deutsch-Spanisch", url: "https://de.pons.com/%C3%BCbersetzung/deutsch-spanisch"}
+    ],
+    search: [
+        { name: "Wikipedia", url: "https://de.wikipedia.org/wiki/Wikipedia:Hauptseite"},
+        { name: "ZoteroBib", url: "https://zbib.org"},
+        { name: "Scholar", url: "https://scholar.google.com"},
+        { name: "Gutenberg Projekt", url: "https://www.gutenberg.org"}
+    ]
+};
+
+// Ordner öffnen
+function openFolder(name) {
+    const links = folders[name] || [];
+    folderContent.innerHTML = `
+        <div class="folder-grid">
+            ${links.map(link => `
+                <a class="icon" href="${link.url}" target="_blank">
+                    <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(link.url).hostname}">
+                    <span>${link.name}</span>
+                </a>`).join('')}
+        </div>
+        <div class="close-hint">Klicke außerhalb, um zu schließen</div>
+    `;
+    overlay.classList.add('active');
+}
+
+// Klick außerhalb schließt Overlay
+function overlayClick(e) {
+    if (e.target === overlay) {
+        overlay.classList.remove('active');
+    }
+}
+</script>
+</body>
+</html>
